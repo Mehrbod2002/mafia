@@ -7,9 +7,11 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, s ports.Services, _ ports.SFU) {
-	auth := r.Group("/auth")
-	{
-		auth.POST("/register", RegisterHandler(s.User))
+        registerSwaggerRoutes(r)
+
+        auth := r.Group("/auth")
+        {
+                auth.POST("/register", RegisterHandler(s.User))
 		auth.POST("/verify", VerifyOTPHandler(s.User))
 		auth.POST("/login", LoginHandler(s.User))
 	}
