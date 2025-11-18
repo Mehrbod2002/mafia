@@ -1,0 +1,6 @@
+name: CI/CD
+on: [push, pull_request]
+jobs:
+  test: {runs-on: ubuntu-latest, steps: [checkout, setup-go, test, coverage]}
+  build: {needs: test, steps: [build, push-docker]}
+  deploy: {needs: build, steps: [deploy-k8s, notify]}
