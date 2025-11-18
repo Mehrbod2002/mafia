@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"mafia/internal/core/domain"
@@ -13,10 +14,11 @@ type gameService struct {
 	roomRepo ports.RoomRepository
 	roleRepo ports.RoleRepository
 	userRepo ports.UserRepository
+	events   ports.EventBus
 }
 
-func NewGameService(roomRepo ports.RoomRepository, roleRepo ports.RoleRepository, userRepo ports.UserRepository) ports.GameService {
-	return &gameService{roomRepo, roleRepo, userRepo}
+func NewGameService(roomRepo ports.RoomRepository, roleRepo ports.RoleRepository, userRepo ports.UserRepository, events ports.EventBus) ports.GameService {
+	return &gameService{roomRepo: roomRepo, roleRepo: roleRepo, userRepo: userRepo, events: events}
 }
 
 func (s *gameService) CreateRoom(hostID uint, roomType string) (*domain.GameRoom, error) {
@@ -25,8 +27,13 @@ func (s *gameService) CreateRoom(hostID uint, roomType string) (*domain.GameRoom
 		Type:   roomType,
 		Code:   randString(6),
 	}
-	err := s.roomRepo.Create(room)
-	return room, err
+	if err := s.roomRepo.Create(room); err != nil {
+		return nil, err
+	}
+	if s.events != nil {
+		s.events.Publish(context.Background(), "game.room_created", room)
+	}
+	return room, nil
 }
 
 func (s *gameService) ListRooms() ([]domain.GameRoom, error) {
@@ -58,7 +65,13 @@ func (s *gameService) StartGame(roomID uint) error {
 	room.Phase = "night"
 	room.DayCount = 1
 	room.Results = assignments
-	return s.roomRepo.Update(room)
+	if err := s.roomRepo.Update(room); err != nil {
+		return err
+	}
+	if s.events != nil {
+		s.events.Publish(context.Background(), "game.started", room)
+	}
+	return nil
 }
 
 func assignRoles(room *domain.GameRoom, roleRepo ports.RoleRepository) (string, error) {
@@ -131,6 +144,9 @@ func (s *gameService) AdvancePhase(roomID uint) (*domain.GameRoom, error) {
 	}
 	if err := s.roomRepo.Update(room); err != nil {
 		return nil, err
+	}
+	if s.events != nil {
+		s.events.Publish(context.Background(), "game.phase_changed", room)
 	}
 	return room, nil
 }

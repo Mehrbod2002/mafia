@@ -4,11 +4,15 @@ import (
 	"mafia/config"
 	httpadapter "mafia/internal/adapters/http"
 	"mafia/internal/adapters/postgres"
-	"mafia/internal/adapters/redis"
 	"mafia/internal/adapters/webrtc"
 	"mafia/internal/core/services"
 	"mafia/internal/ports"
+	cachepkg "mafia/pkg/cache"
+	"mafia/pkg/events"
 	"mafia/pkg/logger"
+	"mafia/pkg/notifications"
+	"mafia/pkg/payment"
+	"mafia/pkg/queue"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +27,11 @@ func main() {
 	logger.Init(cfg.Logging.Level)
 
 	db := postgres.New(cfg.Database.URL)
-	cache := redis.New(cfg.Redis.Addr)
+	inMemoryCache := cachepkg.NewInMemoryCache()
+	taskQueue := queue.NewBackgroundQueue(128)
+	eventBus := events.NewSimpleBus(taskQueue.Enqueue)
+	notifier := notifications.NewLogSender()
+	paymentProvider := payment.NewZarinpalProvider(cfg.Payment.Zarinpal)
 	sfu := webrtc.NewSFU()
 
 	repos := ports.Repositories{
@@ -38,7 +46,15 @@ func main() {
 		Scenario:  postgres.NewScenarioRepository(db),
 	}
 
-	services := services.NewServices(repos, cache, sfu)
+	infra := ports.Infrastructure{
+		Cache:         inMemoryCache,
+		Queue:         taskQueue,
+		Events:        eventBus,
+		Notifications: notifier,
+		Payments:      paymentProvider,
+	}
+
+	services := services.NewServices(repos, infra, sfu)
 
 	r := gin.Default()
 	httpadapter.SetupRoutes(r, services, sfu)
@@ -50,4 +66,6 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	logrus.Info("Shutting down server...")
+
+	taskQueue.Close()
 }

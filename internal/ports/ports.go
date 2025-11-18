@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"mafia/internal/core/domain"
 	"time"
 )
@@ -70,6 +71,38 @@ type ScenarioRepository interface {
 	List() ([]domain.Scenario, error)
 	Update(*domain.Scenario) error
 	Delete(id uint) error
+}
+
+type Cache interface {
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration)
+	Get(ctx context.Context, key string) (interface{}, bool)
+	Delete(ctx context.Context, key string)
+}
+
+type Queue interface {
+	Enqueue(func()) error
+	Close()
+}
+
+type EventBus interface {
+	Publish(ctx context.Context, topic string, payload interface{})
+	Subscribe(topic string, handler func(ctx context.Context, payload interface{}))
+}
+
+type NotificationSender interface {
+	Send(userID uint, channel, message string) error
+}
+
+type PaymentProvider interface {
+	CreatePaymentURL(userID uint, planID string) (string, error)
+}
+
+type Infrastructure struct {
+	Cache         Cache
+	Queue         Queue
+	Events        EventBus
+	Notifications NotificationSender
+	Payments      PaymentProvider
 }
 
 type Repositories struct {

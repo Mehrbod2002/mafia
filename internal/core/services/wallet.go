@@ -7,10 +7,11 @@ import (
 
 type walletService struct {
 	walletRepo ports.WalletRepository
+	payments   ports.PaymentProvider
 }
 
-func NewWalletService(walletRepo ports.WalletRepository) ports.WalletService {
-	return &walletService{walletRepo}
+func NewWalletService(walletRepo ports.WalletRepository, payments ports.PaymentProvider) ports.WalletService {
+	return &walletService{walletRepo: walletRepo, payments: payments}
 }
 
 func (s *walletService) GetWallet(userID uint) (*domain.Wallet, error) {
@@ -18,5 +19,8 @@ func (s *walletService) GetWallet(userID uint) (*domain.Wallet, error) {
 }
 
 func (s *walletService) InitiatePurchase(userID uint, planID string) (string, error) {
-	return "https://zarinpal.com/pg/StartPay/12345", nil
+	if s.payments != nil {
+		return s.payments.CreatePaymentURL(userID, planID)
+	}
+	return "", nil
 }

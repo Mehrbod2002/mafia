@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
 )
@@ -9,10 +10,11 @@ type challengeService struct {
 	challengeRepo ports.ChallengeRepository
 	userRepo      ports.UserRepository
 	walletRepo    ports.WalletRepository
+	events        ports.EventBus
 }
 
-func NewChallengeService(challengeRepo ports.ChallengeRepository, userRepo ports.UserRepository, walletRepo ports.WalletRepository) ports.ChallengeService {
-	return &challengeService{challengeRepo, userRepo, walletRepo}
+func NewChallengeService(challengeRepo ports.ChallengeRepository, userRepo ports.UserRepository, walletRepo ports.WalletRepository, events ports.EventBus) ports.ChallengeService {
+	return &challengeService{challengeRepo: challengeRepo, userRepo: userRepo, walletRepo: walletRepo, events: events}
 }
 
 func (s *challengeService) List() ([]domain.Challenge, error) {
@@ -30,5 +32,11 @@ func (s *challengeService) Complete(challengeID, userID uint) error {
 	}
 	wallet.Coins += challenge.RewardCoins
 	wallet.Diamonds += challenge.RewardDiamonds
-	return s.walletRepo.Update(wallet)
+	if err := s.walletRepo.Update(wallet); err != nil {
+		return err
+	}
+	if s.events != nil {
+		s.events.Publish(context.Background(), "challenge.completed", map[string]uint{"challenge_id": challengeID, "user_id": userID})
+	}
+	return nil
 }
