@@ -2,10 +2,10 @@ package queue
 
 import "errors"
 
-// Task defines a unit of work executed by the queue.
+// Task is a type alias for func() – we keep it only for readability/documentation
 type Task func()
 
-// Dispatcher provides the minimal interface used by services.
+// Dispatcher is your old internal interface (you can keep it or delete it later)
 type Dispatcher interface {
 	Enqueue(Task) error
 	Close()
@@ -17,7 +17,7 @@ type BackgroundQueue struct {
 	running bool
 }
 
-// NewBackgroundQueue spins up a queue with the given buffer size.
+// NewBackgroundQueue creates a new queue with the given buffer size.
 func NewBackgroundQueue(buffer int) *BackgroundQueue {
 	q := &BackgroundQueue{
 		tasks:   make(chan Task, buffer),
@@ -27,13 +27,14 @@ func NewBackgroundQueue(buffer int) *BackgroundQueue {
 	return q
 }
 
-// Enqueue schedules a task for execution.
-func (q *BackgroundQueue) Enqueue(task Task) error {
+// Enqueue – the ONLY method you need now.
+// It satisfies BOTH your old Dispatcher AND ports.Queue (which expects func()).
+func (q *BackgroundQueue) Enqueue(task func()) error {
 	if !q.running {
 		return errors.New("queue stopped")
 	}
 	select {
-	case q.tasks <- task:
+	case q.tasks <- Task(task): // explicit conversion only for clarity
 		return nil
 	default:
 		return errors.New("queue full")

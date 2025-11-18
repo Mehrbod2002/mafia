@@ -5,26 +5,23 @@ import (
 	"sync"
 )
 
-// Handler consumes an event payload.
-type Handler func(ctx context.Context, payload interface{})
-
 // Bus offers simple publish/subscribe semantics.
 type Bus interface {
 	Publish(ctx context.Context, topic string, payload interface{})
-	Subscribe(topic string, handler Handler)
+	Subscribe(topic string, handler func(context.Context, interface{}))
 }
 
 // SimpleBus is an in-memory implementation using an optional async dispatcher.
 type SimpleBus struct {
 	mu          sync.RWMutex
-	subscribers map[string][]Handler
+	subscribers map[string][]func(context.Context, interface{})
 	dispatch    func(func()) error
 }
 
 // NewSimpleBus builds a bus that optionally dispatches handlers through a worker queue.
 func NewSimpleBus(dispatch func(func()) error) *SimpleBus {
 	return &SimpleBus{
-		subscribers: make(map[string][]Handler),
+		subscribers: make(map[string][]func(context.Context, interface{})),
 		dispatch:    dispatch,
 	}
 }
@@ -46,7 +43,7 @@ func (b *SimpleBus) Publish(ctx context.Context, topic string, payload interface
 }
 
 // Subscribe registers a handler for a topic.
-func (b *SimpleBus) Subscribe(topic string, handler Handler) {
+func (b *SimpleBus) Subscribe(topic string, handler func(context.Context, interface{})) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.subscribers[topic] = append(b.subscribers[topic], handler)
