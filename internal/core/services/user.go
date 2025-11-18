@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"mafia/internal/core/domain"
@@ -13,12 +14,16 @@ import (
 var jwtKey = []byte("secret")
 
 type userService struct {
-	userRepo   ports.UserRepository
-	walletRepo ports.WalletRepository
+	userRepo      ports.UserRepository
+	walletRepo    ports.WalletRepository
+	cache         ports.Cache
+	queue         ports.Queue
+	events        ports.EventBus
+	notifications ports.NotificationSender
 }
 
-func NewUserService(userRepo ports.UserRepository, walletRepo ports.WalletRepository) ports.UserService {
-	return &userService{userRepo, walletRepo}
+func NewUserService(userRepo ports.UserRepository, walletRepo ports.WalletRepository, infra ports.Infrastructure) ports.UserService {
+	return &userService{userRepo: userRepo, walletRepo: walletRepo, cache: infra.Cache, queue: infra.Queue, events: infra.Events, notifications: infra.Notifications}
 }
 
 func (s *userService) Register(phone string) error {
@@ -32,12 +37,39 @@ func (s *userService) Register(phone string) error {
 		OTP:        otp,
 		OTPExpires: time.Now().Add(5 * time.Minute),
 	}
-	return s.userRepo.Create(user)
+	if err := s.userRepo.Create(user); err != nil {
+		return err
+	}
+	if s.cache != nil {
+		s.cache.Set(context.Background(), otpCacheKey(phone), otp, 5*time.Minute)
+	}
+	if s.queue != nil {
+		_ = s.queue.Enqueue(func() {
+			if s.notifications != nil {
+				_ = s.notifications.Send(user.ID, "sms", fmt.Sprintf("Your verification code is %s", otp))
+			}
+			if s.events != nil {
+				s.events.Publish(context.Background(), "user.registered", user)
+			}
+		})
+	}
+	return nil
 }
 
 func (s *userService) VerifyOTP(req domain.VerifyOTPRequest) (string, uint, error) {
 	user, err := s.userRepo.FindByPhone(req.Phone)
-	if err != nil || user.OTP != req.OTP || time.Now().After(user.OTPExpires) {
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid otp")
+	}
+	cachedOTP := user.OTP
+	if s.cache != nil {
+		if val, ok := s.cache.Get(context.Background(), otpCacheKey(req.Phone)); ok {
+			if code, ok := val.(string); ok {
+				cachedOTP = code
+			}
+		}
+	}
+	if cachedOTP != req.OTP || time.Now().After(user.OTPExpires) {
 		return "", 0, fmt.Errorf("invalid otp")
 	}
 	user.OTP = ""
@@ -53,6 +85,18 @@ func (s *userService) VerifyOTP(req domain.VerifyOTPRequest) (string, uint, erro
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 	tokenStr, _ := token.SignedString(jwtKey)
+
+	if s.queue != nil {
+		_ = s.queue.Enqueue(func() {
+			if s.events != nil {
+				s.events.Publish(context.Background(), "user.verified", user)
+			}
+			if s.notifications != nil {
+				_ = s.notifications.Send(user.ID, "in-app", "Welcome to Mafia! Your account is verified.")
+			}
+		})
+	}
+
 	return tokenStr, user.ID, nil
 }
 
@@ -140,4 +184,8 @@ func generateOTP() string {
 	b := make([]byte, 3)
 	rand.Read(b)
 	return fmt.Sprintf("%06d", int(b[0])<<16|int(b[1])<<8|int(b[2])%1000000)
+}
+
+func otpCacheKey(phone string) string {
+	return fmt.Sprintf("otp:%s", phone)
 }
