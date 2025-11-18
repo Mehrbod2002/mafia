@@ -10,3 +10,7 @@
 - Admin Panel + Audit
 - K8s + Helm + Terraform
 - CI/CD + Monitoring + Tracing
+
+## API documentation
+- Static OpenAPI file: `GET /swagger/openapi.yaml`
+- Dynamic Swagger UI (uses the incoming host): `GET /swagger/`
