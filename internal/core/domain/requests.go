@@ -42,3 +42,29 @@ type WSMessage struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`
 }
+
+type PurchaseItemRequest struct {
+	ItemID uint `json:"item_id" binding:"required"`
+}
+
+type CreateRoleRequest struct {
+	Name        string   `json:"name" binding:"required"`
+	Description string   `json:"description"`
+	Abilities   []string `json:"abilities"`
+	Team        string   `json:"team"`
+	MaxCount    int      `json:"max_count"`
+}
+
+type RuleRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+	Phase       string `json:"phase"`
+	Enabled     bool   `json:"enabled"`
+}
+
+type ScenarioRequest struct {
+	Name        string   `json:"name" binding:"required"`
+	Description string   `json:"description"`
+	Rules       []string `json:"rules"`
+	Roles       []string `json:"roles"`
+}

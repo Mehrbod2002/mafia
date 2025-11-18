@@ -38,6 +38,18 @@ func UpdateProfileHandler(srv ports.UserService) gin.HandlerFunc {
 	}
 }
 
+func DashboardHandler(srv ports.UserService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.GetUint("user_id")
+		dashboard, err := srv.GetDashboard(userID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, dashboard)
+	}
+}
+
 func GetWalletHandler(srv ports.WalletService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")

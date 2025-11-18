@@ -1,10 +1,12 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
 	"math/rand"
+	"time"
 )
 
 type gameService struct {
@@ -48,22 +50,89 @@ func (s *gameService) StartGame(roomID uint) error {
 	if err != nil || len(room.Players) < 6 {
 		return fmt.Errorf("not enough players")
 	}
-	assignRoles(room, s.roleRepo)
+	assignments, err := assignRoles(room, s.roleRepo)
+	if err != nil {
+		return err
+	}
 	room.Status = "playing"
 	room.Phase = "night"
+	room.DayCount = 1
+	room.Results = assignments
 	return s.roomRepo.Update(room)
 }
 
-func assignRoles(room *domain.GameRoom, roleRepo ports.RoleRepository) {
-	// TODO: implement role assignment logic
+func assignRoles(room *domain.GameRoom, roleRepo ports.RoleRepository) (string, error) {
+	roles, err := roleRepo.List()
+	if err != nil {
+		return "", err
+	}
+	var pool []string
+	for _, r := range roles {
+		count := r.MaxCount
+		if count == 0 {
+			count = 1
+		}
+		for i := 0; i < count; i++ {
+			pool = append(pool, r.Name)
+		}
+	}
+	if len(pool) < len(room.Players) {
+		for len(pool) < len(room.Players) {
+			pool = append(pool, "Villager")
+		}
+	}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(pool), func(i, j int) { pool[i], pool[j] = pool[j], pool[i] })
+
+	assignments := make(map[uint]string)
+	for idx, p := range room.Players {
+		assignments[p.ID] = pool[idx%len(pool)]
+	}
+	data, _ := json.Marshal(assignments)
+	return string(data), nil
 }
 
 func (s *gameService) Vote(roomID, userID, targetID uint) error {
-	return nil
+	room, err := s.roomRepo.FindByID(roomID)
+	if err != nil {
+		return err
+	}
+	votes := map[string]uint{"voter": userID, "target": targetID}
+	entry, _ := json.Marshal(votes)
+	room.Results += string(entry) + "\n"
+	return s.roomRepo.Update(room)
 }
 
 func (s *gameService) UseAbility(roomID, userID uint, ability string, targetID uint) error {
-	return nil
+	room, err := s.roomRepo.FindByID(roomID)
+	if err != nil {
+		return err
+	}
+	abilityLog := map[string]interface{}{
+		"user":    userID,
+		"ability": ability,
+		"target":  targetID,
+	}
+	entry, _ := json.Marshal(abilityLog)
+	room.Results += string(entry) + "\n"
+	return s.roomRepo.Update(room)
+}
+
+func (s *gameService) AdvancePhase(roomID uint) (*domain.GameRoom, error) {
+	room, err := s.roomRepo.FindByID(roomID)
+	if err != nil {
+		return nil, err
+	}
+	if room.Phase == "night" {
+		room.Phase = "day"
+	} else {
+		room.Phase = "night"
+		room.DayCount++
+	}
+	if err := s.roomRepo.Update(room); err != nil {
+		return nil, err
+	}
+	return room, nil
 }
 
 func randString(n int) string {

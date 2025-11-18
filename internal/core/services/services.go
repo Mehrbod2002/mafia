@@ -8,6 +8,8 @@ func NewServices(repos ports.Repositories, _ interface{}, _ ports.SFU) ports.Ser
 	challenge := NewChallengeService(repos.Challenge, repos.User, repos.Wallet)
 	group := NewGroupService(repos.Group, repos.User)
 	game := NewGameService(repos.Room, repos.Role, repos.User)
+	shop := NewShopService(repos.Shop, repos.Wallet)
+	admin := NewAdminService(repos.Role, repos.Rule, repos.Scenario)
 
 	return ports.Services{
 		User:      user,
@@ -15,5 +17,7 @@ func NewServices(repos ports.Repositories, _ interface{}, _ ports.SFU) ports.Ser
 		Challenge: challenge,
 		Group:     group,
 		Game:      game,
+		Shop:      shop,
+		Admin:     admin,
 	}
 }

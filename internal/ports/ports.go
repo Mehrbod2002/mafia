@@ -50,6 +50,28 @@ type RoleRepository interface {
 	Delete(id uint) error
 }
 
+type ShopRepository interface {
+	List() ([]domain.ShopItem, error)
+	FindByID(uint) (*domain.ShopItem, error)
+	Create(*domain.ShopItem) error
+	Update(*domain.ShopItem) error
+	Delete(id uint) error
+}
+
+type RuleRepository interface {
+	Create(*domain.GameRule) error
+	List() ([]domain.GameRule, error)
+	Update(*domain.GameRule) error
+	Delete(id uint) error
+}
+
+type ScenarioRepository interface {
+	Create(*domain.Scenario) error
+	List() ([]domain.Scenario, error)
+	Update(*domain.Scenario) error
+	Delete(id uint) error
+}
+
 type Repositories struct {
 	User      UserRepository
 	Wallet    WalletRepository
@@ -57,6 +79,9 @@ type Repositories struct {
 	Group     GroupRepository
 	Room      RoomRepository
 	Role      RoleRepository
+	Shop      ShopRepository
+	Rule      RuleRepository
+	Scenario  ScenarioRepository
 }
 
 type UserService interface {
@@ -67,6 +92,7 @@ type UserService interface {
 	IsAdmin(id uint) (bool, error)
 	GetProfile(id uint) (*domain.Profile, error)
 	UpdateProfile(id uint, req domain.UpdateProfileRequest) (*domain.Profile, error)
+	GetDashboard(id uint) (map[string]interface{}, error)
 	BanUser(id uint) error
 	SuspendUser(id uint) error
 }
@@ -94,8 +120,32 @@ type GameService interface {
 	JoinRoom(roomID, userID uint) error
 	LeaveRoom(roomID, userID uint) error
 	StartGame(roomID uint) error
+	AdvancePhase(roomID uint) (*domain.GameRoom, error)
 	Vote(roomID, userID, targetID uint) error
 	UseAbility(roomID, userID uint, ability string, targetID uint) error
+}
+
+type ShopService interface {
+	ListItems() ([]domain.ShopItem, error)
+	PurchaseItem(userID, itemID uint) (*domain.ShopItem, error)
+	CreateItem(item domain.ShopItem) (*domain.ShopItem, error)
+	UpdateItem(item domain.ShopItem) (*domain.ShopItem, error)
+	DeleteItem(id uint) error
+}
+
+type AdminService interface {
+	CreateRole(req domain.CreateRoleRequest) (*domain.Role, error)
+	UpdateRole(id uint, req domain.CreateRoleRequest) (*domain.Role, error)
+	DeleteRole(id uint) error
+	ListRoles() ([]domain.Role, error)
+	CreateRule(req domain.RuleRequest) (*domain.GameRule, error)
+	UpdateRule(id uint, req domain.RuleRequest) (*domain.GameRule, error)
+	DeleteRule(id uint) error
+	ListRules() ([]domain.GameRule, error)
+	CreateScenario(req domain.ScenarioRequest) (*domain.Scenario, error)
+	UpdateScenario(id uint, req domain.ScenarioRequest) (*domain.Scenario, error)
+	DeleteScenario(id uint) error
+	ListScenarios() ([]domain.Scenario, error)
 }
 
 type Services struct {
@@ -104,6 +154,8 @@ type Services struct {
 	Challenge ChallengeService
 	Group     GroupService
 	Game      GameService
+	Shop      ShopService
+	Admin     AdminService
 }
 
 // SFU represents the WebRTC bridge used by websocket handlers.
