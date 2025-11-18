@@ -3,6 +3,8 @@ package postgres
 import (
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
+
+	"gorm.io/gorm"
 )
 
 type challengeRepository struct {
@@ -13,7 +15,7 @@ func NewChallengeRepository(db *gorm.DB) ports.ChallengeRepository {
 	return &challengeRepository{db}
 }
 
-func (r cinnelRepository) Create(c *domain.Challenge) error {
+func (r *challengeRepository) Create(c *domain.Challenge) error {
 	return r.db.Create(c).Error
 }
 

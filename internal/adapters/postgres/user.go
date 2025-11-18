@@ -4,6 +4,8 @@ import (
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type userRepository struct {
