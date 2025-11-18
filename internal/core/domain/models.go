@@ -8,30 +8,30 @@ import (
 
 type User struct {
 	gorm.Model
-	Phone       string `gorm:"unique;not null"`
-	Username    string
-	Password    string
-	OTP         string
-	OTPExpires  time.Time
-	Role        string `gorm:"default:user"`
-	Status      string `gorm:"default:active"`
-	Profile     Profile
-	Wallet      Wallet
+	Phone      string `gorm:"unique;not null"`
+	Username   string
+	Password   string
+	OTP        string
+	OTPExpires time.Time
+	Role       string `gorm:"default:user"`
+	Status     string `gorm:"default:active"`
+	Profile    Profile
+	Wallet     Wallet
 }
 
 type Profile struct {
 	gorm.Model
-	UserID      uint
-	Name        string
-	Avatar      string
-	Gender      string
-	Age         int
-	Level       int
-	Wins        int
-	Losses      int
-	PlayTime    int
-	Friends     int
-	Medals      []string `gorm:"serializer:json"`
+	UserID   uint
+	Name     string
+	Avatar   string
+	Gender   string
+	Age      int
+	Level    int
+	Wins     int
+	Losses   int
+	PlayTime int
+	Friends  int
+	Medals   []string `gorm:"serializer:json"`
 }
 
 type Role struct {
@@ -45,30 +45,30 @@ type Role struct {
 
 type GameRoom struct {
 	gorm.Model
-	Code        string `gorm:"unique"`
-	Type        string
-	HostID      uint
-	Players     []User `gorm:"many2many:room_players;"`
-	Status      string `gorm:"default:waiting"`
-	Phase       string
-	DayCount    int
-	Winner      string
-	Results     string `gorm:"type:json"`
+	Code     string `gorm:"unique"`
+	Type     string
+	HostID   uint
+	Players  []User `gorm:"many2many:room_players;"`
+	Status   string `gorm:"default:waiting"`
+	Phase    string
+	DayCount int
+	Winner   string
+	Results  string `gorm:"type:json"`
 }
 
 type Group struct {
 	gorm.Model
-	Name        string
-	OwnerID     uint
-	Members     []User `gorm:"many2many:group_members;"`
-	Points      int
+	Name    string
+	OwnerID uint
+	Members []User `gorm:"many2many:group_members;"`
+	Points  int
 }
 
 type Wallet struct {
 	gorm.Model
-	UserID      uint
-	Coins       int
-	Diamonds    int
+	UserID   uint
+	Coins    int
+	Diamonds int
 }
 
 type Transaction struct {
@@ -104,4 +104,33 @@ type Term struct {
 	Content  string
 	Version  string
 	Required bool
+}
+
+// ShopItem represents items available for purchase in the in-game store.
+type ShopItem struct {
+	gorm.Model
+	Name     string
+	Type     string
+	Price    int
+	Currency string
+	Stock    int
+	Metadata map[string]interface{} `gorm:"serializer:json"`
+}
+
+// GameRule captures configurable rule toggles for day/night flow or special cases.
+type GameRule struct {
+	gorm.Model
+	Name        string
+	Description string
+	Phase       string
+	Enabled     bool
+}
+
+// Scenario lets admins bundle rules and roles into curated presets.
+type Scenario struct {
+	gorm.Model
+	Name        string
+	Description string
+	Rules       []string `gorm:"serializer:json"`
+	Roles       []string `gorm:"serializer:json"`
 }

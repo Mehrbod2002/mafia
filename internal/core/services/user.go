@@ -98,6 +98,27 @@ func (s *userService) UpdateProfile(id uint, req domain.UpdateProfileRequest) (*
 	return &user.Profile, nil
 }
 
+func (s *userService) GetDashboard(id uint) (map[string]interface{}, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	wallet, err := s.walletRepo.FindByUserID(id)
+	if err != nil {
+		return nil, err
+	}
+	summary := map[string]interface{}{
+		"profile": user.Profile,
+		"wallet":  wallet,
+		"stats": map[string]int{
+			"wins":      user.Profile.Wins,
+			"losses":    user.Profile.Losses,
+			"play_time": user.Profile.PlayTime,
+		},
+	}
+	return summary, nil
+}
+
 func (s *userService) BanUser(id uint) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {

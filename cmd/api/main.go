@@ -33,6 +33,9 @@ func main() {
 		Wallet:    postgres.NewWalletRepository(db),
 		Challenge: postgres.NewChallengeRepository(db),
 		Role:      postgres.NewRoleRepository(db),
+		Shop:      postgres.NewShopRepository(db),
+		Rule:      postgres.NewRuleRepository(db),
+		Scenario:  postgres.NewScenarioRepository(db),
 	}
 
 	services := services.NewServices(repos, cache, sfu)
