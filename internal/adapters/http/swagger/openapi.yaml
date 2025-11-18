@@ -1,31 +1,38 @@
 openapi: 3.0.3
-tags:
-  - name: Auth
-    description: Authentication and access tokens
-  - name: User
-    description: Profile and wallet management
-  - name: Shop
-    description: Player-facing shop operations
-  - name: Game
-    description: Room lifecycle and game flow
-  - name: Admin
-    description: Administrative management of rules, roles, and scenarios
 info:
-  title: Mafia API
+  title: Mafia Society API
   version: 1.0.0
   description: |
-    HTTP API for the Mafia game platform.
+    REST API surface for the Mafia Society voice game platform.
 
-    - **Static documentation:** available at `/swagger/openapi.yaml`.
-    - **Dynamic documentation:** Swagger UI at `/swagger/` resolves the server URL from incoming requests and serves `/swagger/openapi.json`.
+    This document aligns with the full feature list (auth, rooms, WebRTC SFU, game logic, scenarios, and shop) and pairs with Socket.IO signaling for real-time flows.
 servers:
   - url: http://localhost:8080
     description: Local development server
+  - url: https://api.mafia.local
+    description: Example production host
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Authentication, session tokens, and password recovery
+  - name: Users
+    description: Profile, wallet, and inventory endpoints
+  - name: Rooms
+    description: Voice rooms lifecycle and moderation
+  - name: WebRTC
+    description: REST helpers for SFU bootstrapping (full flow is Socket.IO signaling)
+  - name: Game
+    description: In-room Mafia game operations
+  - name: Shop
+    description: In-app purchases and product catalog
+  - name: Admin
+    description: Administrative management of roles, scenarios, and characters
 paths:
-  /auth/register:
+  /api/v1/auth/register:
     post:
       tags: [Auth]
-      summary: Request an OTP for registration
+      summary: Register with email or phone
       requestBody:
         required: true
         content:
@@ -33,52 +40,22 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        '200':
-          description: OTP has been issued
+        '201':
+          description: Account created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: '#/components/schemas/AuthTokens'
         '409':
-          description: Phone already registered
+          description: Account already exists
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/verify:
+  /api/v1/auth/login:
     post:
       tags: [Auth]
-      summary: Verify OTP and create an account
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyOTPRequest'
-      responses:
-        '200':
-          description: Verified and authenticated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: JWT for subsequent requests
-                  user_id:
-                    type: integer
-                    format: uint32
-        '401':
-          description: Invalid OTP
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Request an OTP for an existing account
+      summary: Login with email or phone
       requestBody:
         required: true
         content:
@@ -87,39 +64,146 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: OTP has been issued
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/social-login:
+    post:
+      tags: [Auth]
+      summary: Social login with Google or Apple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+      responses:
+        '200':
+          description: Authenticated via social provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: Invalid social token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange refresh token for new access tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Refreshed tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate refresh token
+      responses:
+        '204':
+          description: Logged out
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Send password reset email or SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Reset link sent
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '404':
-          description: User not found
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid or expired token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /user/profile:
+  /api/v1/users/me:
     get:
-      tags: [User]
-      summary: Fetch the authenticated user's profile
+      tags: [Users]
+      summary: Get current user profile, stats, and wallet
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Profile details
+          description: Authenticated profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Profile'
-        '404':
-          description: Profile missing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/UserProfile'
     put:
-      tags: [User]
-      summary: Update profile fields
+      tags: [Users]
+      summary: Update avatar, username, or bio
       security:
         - bearerAuth: []
       requestBody:
@@ -134,129 +218,88 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Profile'
-        '400':
-          description: Validation errors
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /user/dashboard:
+                $ref: '#/components/schemas/UserProfile'
+  /api/v1/users/{userId}:
     get:
-      tags: [User]
-      summary: View dashboard data
-      security:
-        - bearerAuth: []
+      tags: [Users]
+      summary: Get a public profile
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: Aggregated player stats and balances
+          description: Public profile
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
-        '400':
-          description: Unable to build dashboard
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /user/wallet:
-    get:
-      tags: [User]
-      summary: View wallet balances
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Wallet balances
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/PublicProfile'
         '404':
-          description: Wallet not found
+          description: User not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /user/purchase:
-    post:
-      tags: [User]
-      summary: Initiate a subscription or currency purchase
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PurchaseRequest'
-      responses:
-        '200':
-          description: Payment URL generated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  payment_url:
-                    type: string
-        '400':
-          description: Unable to initiate purchase
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /shop/items:
+  /api/v1/users/me/inventory:
     get:
-      tags: [Shop]
-      summary: List available shop items
+      tags: [Users]
+      summary: List owned cosmetics, characters, and items
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Items in the shop
+          description: Inventory items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ShopItem'
-        '500':
-          description: Unable to list items
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /shop/purchase:
-    post:
-      tags: [Shop]
-      summary: Purchase an item using wallet funds
+                  $ref: '#/components/schemas/InventoryItem'
+  /api/v1/users/me/wallet:
+    get:
+      tags: [Users]
+      summary: Get coin balance and transaction history
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PurchaseItemRequest'
       responses:
         '200':
-          description: Purchased item details
+          description: Wallet details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopItem'
-        '400':
-          description: Purchase rejected
+                $ref: '#/components/schemas/Wallet'
+  /api/v1/users/me/purchases:
+    get:
+      tags: [Users]
+      summary: Purchase history for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of purchases
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Purchase'
+  /api/v1/rooms:
+    get:
+      tags: [Rooms]
+      summary: List public, trending, and friends rooms
+      responses:
+        '200':
+          description: Rooms list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomSummary'
     post:
-      tags: [Game]
+      tags: [Rooms]
       summary: Create a room
       security:
         - bearerAuth: []
@@ -267,150 +310,225 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRoomRequest'
       responses:
-        '200':
-          description: Newly created room
+        '201':
+          description: Room created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameRoom'
-        '400':
-          description: Unable to create room
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/RoomDetail'
+  /api/v1/rooms/explore:
     get:
-      tags: [Game]
-      summary: List open rooms
-      security:
-        - bearerAuth: []
+      tags: [Rooms]
+      summary: Filter rooms by scenario, language, or other metadata
+      parameters:
+        - in: query
+          name: scenarioId
+          schema:
+            type: string
+        - in: query
+          name: language
+          schema:
+            type: string
       responses:
         '200':
-          description: Available rooms
+          description: Filtered rooms
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/GameRoom'
-        '500':
-          description: Unable to list rooms
+                  $ref: '#/components/schemas/RoomSummary'
+  /api/v1/rooms/{roomId}:
+    get:
+      tags: [Rooms]
+      summary: Room details and current game state
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: Room details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/join:
-    post:
-      tags: [Game]
-      summary: Join a room
+                $ref: '#/components/schemas/RoomDetail'
+    delete:
+      tags: [Rooms]
+      summary: Delete a room (owner only)
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '204':
+          description: Room deleted
+  /api/v1/rooms/{roomId}/join:
+    post:
+      tags: [Rooms]
+      summary: Join a room (returns WebRTC join data)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
       responses:
         '200':
-          description: Joined the room
+          description: Join info
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Join rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/leave:
+                $ref: '#/components/schemas/JoinRoomResponse'
+  /api/v1/rooms/{roomId}/leave:
     post:
-      tags: [Game]
+      tags: [Rooms]
       summary: Leave a room
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '204':
+          description: Left the room
+  /api/v1/rooms/{roomId}/kick/{userId}:
+    post:
+      tags: [Rooms]
+      summary: Kick a user from the room
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
-          description: Left the room
+          description: User removed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Leave rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/start:
+  /api/v1/rooms/{roomId}/mute/{userId}:
     post:
-      tags: [Game]
-      summary: Start the game in a room
+      tags: [Rooms]
+      summary: Force mute a user
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User muted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/rooms/{roomId}/make-moderator/{userId}:
+    post:
+      tags: [Rooms]
+      summary: Promote a user to moderator
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User promoted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/rooms/{roomId}/webrtc/join:
+    post:
+      tags: [WebRTC]
+      summary: Return router capabilities and receiver transport options
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: WebRTC bootstrap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebRTCJoin'
+  /api/v1/rooms/{roomId}/game/start:
+    post:
+      tags: [Game]
+      summary: Start game and auto-assign roles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
       responses:
         '200':
           description: Game started
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Cannot start game
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/phase:
+                $ref: '#/components/schemas/GameState'
+  /api/v1/rooms/{roomId}/game/assign-roles:
     post:
       tags: [Game]
-      summary: Advance to the next phase
+      summary: Manually assign roles (host only)
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RoleAssignment'
       responses:
         '200':
-          description: Updated room state
+          description: Updated role assignments
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameRoom'
-        '400':
-          description: Cannot advance phase
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/vote:
+                $ref: '#/components/schemas/GameState'
+  /api/v1/rooms/{roomId}/game/next-phase:
     post:
       tags: [Game]
-      summary: Submit a vote
+      summary: Force next phase
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: Phase advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+  /api/v1/rooms/{roomId}/game/state:
+    get:
+      tags: [Game]
+      summary: Current phase, alive players, and role (if applicable)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: Current game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+  /api/v1/rooms/{roomId}/game/vote:
+    post:
+      tags: [Game]
+      summary: Vote to lynch (day phase)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
       requestBody:
         required: true
         content:
@@ -424,61 +542,145 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Vote rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /game/rooms/{id}/ability:
+  /api/v1/rooms/{roomId}/game/mafia-kill:
     post:
       tags: [Game]
-      summary: Use a role ability
+      summary: Mafia chooses a victim (night phase)
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/RoomId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AbilityRequest'
+              $ref: '#/components/schemas/TargetRequest'
       responses:
         '200':
-          description: Ability recorded
+          description: Kill submitted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Ability rejected
+  /api/v1/rooms/{roomId}/game/doctor-save:
+    post:
+      tags: [Game]
+      summary: Doctor saves someone (night phase)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetRequest'
+      responses:
+        '200':
+          description: Save recorded
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/roles:
-    get:
-      tags: [Admin]
-      summary: List roles
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/rooms/{roomId}/game/detective-check:
+    post:
+      tags: [Game]
+      summary: Detective checks alignment (night phase)
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetRequest'
       responses:
         '200':
-          description: Roles
+          description: Check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResult'
+  /api/v1/rooms/{roomId}/game/role-action:
+    post:
+      tags: [Game]
+      summary: Generic action for custom roles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleActionRequest'
+      responses:
+        '200':
+          description: Action accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/rooms/{roomId}/game/end:
+    post:
+      tags: [Game]
+      summary: Force end the game (host only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: Game ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/shop/products:
+    get:
+      tags: [Shop]
+      summary: List all products
+      responses:
+        '200':
+          description: Product catalog
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Role'
+                  $ref: '#/components/schemas/Product'
+  /api/v1/shop/products/{id}:
+    get:
+      tags: [Shop]
+      summary: Product details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/shop/purchase:
     post:
-      tags: [Admin]
-      summary: Create a role
+      tags: [Shop]
+      summary: Purchase with coins or in-app purchase
       security:
         - bearerAuth: []
       requestBody:
@@ -486,93 +688,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRoleRequest'
+              $ref: '#/components/schemas/PurchaseRequest'
       responses:
-        '201':
-          description: Created role
+        '200':
+          description: Purchase confirmed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Role'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/roles/{id}:
-    put:
-      tags: [Admin]
-      summary: Update a role
+                $ref: '#/components/schemas/Purchase'
+  /api/v1/shop/verify-apple:
+    post:
+      tags: [Shop]
+      summary: Verify Apple receipt
       security:
         - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRoleRequest'
+              type: object
+              properties:
+                receiptData:
+                  type: string
       responses:
         '200':
-          description: Updated role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Role'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    delete:
-      tags: [Admin]
-      summary: Delete a role
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Role deleted
+          description: Receipt verified
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Delete rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/rules:
-    get:
-      tags: [Admin]
-      summary: List rules
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Rules
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Rule'
+  /api/v1/shop/verify-google:
     post:
-      tags: [Admin]
-      summary: Create a rule
+      tags: [Shop]
+      summary: Verify Google receipt
       security:
         - bearerAuth: []
       requestBody:
@@ -580,79 +729,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RuleRequest'
-      responses:
-        '201':
-          description: Created rule
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rule'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/rules/{id}:
-    put:
-      tags: [Admin]
-      summary: Update a rule
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RuleRequest'
+              type: object
+              properties:
+                purchaseToken:
+                  type: string
       responses:
         '200':
-          description: Updated rule
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rule'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    delete:
-      tags: [Admin]
-      summary: Delete a rule
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Rule deleted
+          description: Receipt verified
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Delete rejected
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/scenarios:
+  /api/v1/admin/scenarios:
     get:
       tags: [Admin]
-      summary: List scenarios
+      summary: List all scenarios
       security:
         - bearerAuth: []
       responses:
@@ -666,7 +757,7 @@ paths:
                   $ref: '#/components/schemas/Scenario'
     post:
       tags: [Admin]
-      summary: Create a scenario
+      summary: Create new scenario
       security:
         - bearerAuth: []
       requestBody:
@@ -682,24 +773,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Scenario'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /admin/scenarios/{id}:
+  /api/v1/admin/scenarios/{id}:
     put:
       tags: [Admin]
-      summary: Update a scenario
+      summary: Update scenario
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -713,199 +798,386 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Scenario'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     delete:
       tags: [Admin]
-      summary: Delete a scenario
+      summary: Delete scenario
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
           schema:
-            type: integer
+            type: string
+      responses:
+        '204':
+          description: Scenario deleted
+  /api/v1/admin/roles:
+    get:
+      tags: [Admin]
+      summary: List all roles
+      security:
+        - bearerAuth: []
       responses:
         '200':
-          description: Scenario deleted
+          description: Roles
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '400':
-          description: Delete rejected
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+    post:
+      tags: [Admin]
+      summary: Create custom role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '201':
+          description: Created role
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Role'
+  /api/v1/admin/roles/{id}:
+    put:
+      tags: [Admin]
+      summary: Update existing role
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+  /api/v1/scenarios/public:
+    get:
+      tags: [Admin]
+      summary: Public scenarios available to players
+      responses:
+        '200':
+          description: Public scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scenario'
+  /api/v1/characters:
+    get:
+      tags: [Admin]
+      summary: List playable and purchasable characters
+      responses:
+        '200':
+          description: Characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Character'
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  parameters:
+    RoomId:
+      in: path
+      name: roomId
+      required: true
+      schema:
+        type: string
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema:
+        type: string
   schemas:
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
     RegisterRequest:
       type: object
-      required: [phone]
+      required: [username, password]
       properties:
+        username:
+          type: string
+        email:
+          type: string
         phone:
           type: string
-    VerifyOTPRequest:
-      type: object
-      required: [phone, otp]
-      properties:
-        phone:
-          type: string
-        otp:
-          type: string
-        name:
-          type: string
-        age:
-          type: integer
-        gender:
+        password:
           type: string
     LoginRequest:
       type: object
-      required: [phone]
+      required: [password]
       properties:
+        email:
+          type: string
         phone:
+          type: string
+        password:
+          type: string
+    SocialLoginRequest:
+      type: object
+      required: [provider, idToken]
+      properties:
+        provider:
+          type: string
+          enum: [google, apple]
+        idToken:
           type: string
     UpdateProfileRequest:
       type: object
       properties:
-        name:
+        username:
           type: string
         avatar:
           type: string
-    PurchaseRequest:
-      type: object
-      required: [plan_id]
-      properties:
-        plan_id:
+        bio:
           type: string
-    CreateRoomRequest:
-      type: object
-      properties:
-        type:
+        language:
           type: string
-    VoteRequest:
-      type: object
-      required: [target_id]
-      properties:
-        target_id:
-          type: integer
-          format: uint32
-    AbilityRequest:
-      type: object
-      required: [ability, target_id]
-      properties:
-        ability:
-          type: string
-        target_id:
-          type: integer
-          format: uint32
-    PurchaseItemRequest:
-      type: object
-      required: [item_id]
-      properties:
-        item_id:
-          type: integer
-          format: uint32
-    CreateRoleRequest:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        abilities:
-          type: array
-          items:
-            type: string
-        team:
-          type: string
-        max_count:
-          type: integer
-    RuleRequest:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        phase:
-          type: string
-        enabled:
-          type: boolean
-    ScenarioRequest:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        rules:
-          type: array
-          items:
-            type: string
-        roles:
-          type: array
-          items:
-            type: string
-    Profile:
+    UserProfile:
       type: object
       properties:
         id:
-          type: integer
-        user_id:
-          type: integer
-        name:
+          type: string
+        username:
           type: string
         avatar:
           type: string
-        gender:
+        bio:
           type: string
-        age:
-          type: integer
-        level:
+        stats:
+          $ref: '#/components/schemas/UserStats'
+        wallet:
+          $ref: '#/components/schemas/Wallet'
+    PublicProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+    UserStats:
+      type: object
+      properties:
+        gamesPlayed:
           type: integer
         wins:
           type: integer
         losses:
           type: integer
-        play_time:
+        mvpAwards:
           type: integer
-        friends:
-          type: integer
-        medals:
-          type: array
-          items:
-            type: string
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
     Wallet:
       type: object
       properties:
-        id:
+        balance:
           type: integer
-        user_id:
-          type: integer
-        coins:
-          type: integer
-        diamonds:
-          type: integer
-    ShopItem:
+        currency:
+          type: string
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    Transaction:
       type: object
       properties:
         id:
+          type: string
+        amount:
           type: integer
+        direction:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    RoomSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        language:
+          type: string
+        isPublic:
+          type: boolean
+        playerCount:
+          type: integer
+        maxPlayers:
+          type: integer
+        scenarioId:
+          type: string
+    RoomDetail:
+      allOf:
+        - $ref: '#/components/schemas/RoomSummary'
+        - type: object
+          properties:
+            ownerId:
+              type: string
+            moderators:
+              type: array
+              items:
+                type: string
+            allowedCharacters:
+              type: array
+              items:
+                type: string
+            shopItemRequired:
+              type: string
+            gameState:
+              $ref: '#/components/schemas/GameState'
+    CreateRoomRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        scenarioId:
+          type: string
+        isPublic:
+          type: boolean
+        maxPlayers:
+          type: integer
+        language:
+          type: string
+        password:
+          type: string
+        allowedCharacters:
+          type: array
+          items:
+            type: string
+        shopItemRequired:
+          type: string
+    JoinRoomResponse:
+      type: object
+      properties:
+        room:
+          $ref: '#/components/schemas/RoomDetail'
+        sfuToken:
+          type: string
+    WebRTCJoin:
+      type: object
+      properties:
+        routerRtpCapabilities:
+          type: object
+        receiverTransportOptions:
+          type: object
+    GameState:
+      type: object
+      properties:
+        phase:
+          type: string
+          enum: [lobby, day, night, end]
+        alivePlayers:
+          type: array
+          items:
+            type: string
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleAssignment'
+        currentVote:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoteStatus'
+        winner:
+          type: string
+    RoleAssignment:
+      type: object
+      properties:
+        userId:
+          type: string
+        roleId:
+          type: string
+    VoteRequest:
+      type: object
+      required: [targetId]
+      properties:
+        targetId:
+          type: string
+    VoteStatus:
+      type: object
+      properties:
+        voterId:
+          type: string
+        targetId:
+          type: string
+    TargetRequest:
+      type: object
+      required: [targetId]
+      properties:
+        targetId:
+          type: string
+    CheckResult:
+      type: object
+      properties:
+        alignment:
+          type: string
+    RoleActionRequest:
+      type: object
+      required: [roleId, action]
+      properties:
+        roleId:
+          type: string
+        action:
+          type: string
+        targetId:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
         name:
           type: string
         type:
@@ -914,79 +1186,117 @@ components:
           type: integer
         currency:
           type: string
-        stock:
-          type: integer
         metadata:
           type: object
           additionalProperties: true
-    GameRoom:
+    PurchaseRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+        currency:
+          type: string
+        platform:
+          type: string
+    Purchase:
       type: object
       properties:
         id:
-          type: integer
-        code:
           type: string
-        type:
+        productId:
           type: string
-        host_id:
+        amount:
           type: integer
         status:
           type: string
-        phase:
+        createdAt:
           type: string
-        day_count:
+          format: date-time
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        maxPlayers:
           type: integer
-        winner:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioRole'
+        customRules:
           type: string
-        results:
+        nightOrder:
+          type: array
+          items:
+            type: string
+        winConditions:
+          type: object
+          additionalProperties: true
+    ScenarioRequest:
+      type: object
+      required: [name, roles]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        maxPlayers:
+          type: integer
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioRole'
+        customRules:
+          type: string
+        nightOrder:
+          type: array
+          items:
+            type: string
+        winConditions:
+          type: object
+          additionalProperties: true
+    ScenarioRole:
+      type: object
+      properties:
+        roleId:
+          type: string
+        count:
+          type: integer
+        team:
+          type: string
+        ability:
           type: string
     Role:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
-        description:
-          type: string
-        abilities:
-          type: array
-          items:
-            type: string
         team:
           type: string
-        max_count:
+        ability:
+          type: string
+        maxCount:
           type: integer
-    Rule:
+    Character:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
-        description:
+        rarity:
           type: string
-        phase:
-          type: string
-        enabled:
-          type: boolean
-    Scenario:
-      type: object
-      properties:
-        id:
+        price:
           type: integer
-        name:
-          type: string
-        description:
-          type: string
-        rules:
-          type: array
-          items:
-            type: string
-        roles:
-          type: array
-          items:
-            type: string
     MessageResponse:
       type: object
       properties:
