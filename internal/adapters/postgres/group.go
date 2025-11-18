@@ -3,6 +3,8 @@ package postgres
 import (
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
+
+	"gorm.io/gorm"
 )
 
 type groupRepository struct {
@@ -30,7 +32,7 @@ func (r *groupRepository) Update(g *domain.Group) error {
 	return r.db.Save(g).Error
 }
 
-func (r *groupRepository) AddMember(grouproupID, userID uint) error {
+func (r *groupRepository) AddMember(groupID, userID uint) error {
 	return r.db.Exec("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)", groupID, userID).Error
 }
 

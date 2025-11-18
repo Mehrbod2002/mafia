@@ -2,13 +2,14 @@ package main
 
 import (
 	"mafia/config"
-	"mafia/internal/adapters/http"
+	httpadapter "mafia/internal/adapters/http"
 	"mafia/internal/adapters/postgres"
 	"mafia/internal/adapters/redis"
 	"mafia/internal/adapters/webrtc"
 	"mafia/internal/core/services"
 	"mafia/internal/ports"
 	"mafia/pkg/logger"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,18 +33,15 @@ func main() {
 		Wallet:    postgres.NewWalletRepository(db),
 		Challenge: postgres.NewChallengeRepository(db),
 		Role:      postgres.NewRoleRepository(db),
-		Report:    postgres.NewReportRepository(db),
-		Term:      postgres.NewTermRepository(db),
-		Leaderboard: postgres.NewLeaderboardRepository(db),
 	}
 
 	services := services.NewServices(repos, cache, sfu)
 
 	r := gin.Default()
-	http.SetupRoutes(r, services, sfu)
+	httpadapter.SetupRoutes(r, services, sfu)
 
 	srv := &http.Server{Addr: ":" + cfg.Server.Port, Handler: r}
-	go srv.Listen AndServe()
+	go srv.ListenAndServe()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

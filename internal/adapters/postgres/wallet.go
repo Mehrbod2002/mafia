@@ -3,6 +3,8 @@ package postgres
 import (
 	"mafia/internal/core/domain"
 	"mafia/internal/ports"
+
+	"gorm.io/gorm"
 )
 
 type walletRepository struct {
