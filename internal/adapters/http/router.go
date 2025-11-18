@@ -7,11 +7,11 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, s ports.Services, _ ports.SFU) {
-        registerSwaggerRoutes(r)
+	registerSwaggerRoutes(r)
 
-        auth := r.Group("/auth")
-        {
-                auth.POST("/register", RegisterHandler(s.User))
+	auth := r.Group("/auth")
+	{
+		auth.POST("/register", RegisterHandler(s.User))
 		auth.POST("/verify", VerifyOTPHandler(s.User))
 		auth.POST("/login", LoginHandler(s.User))
 	}
@@ -43,7 +43,8 @@ func SetupRoutes(r *gin.Engine, s ports.Services, _ ports.SFU) {
 		game.POST("/rooms/:id/ability", AbilityHandler(s.Game))
 	}
 
-	admin := r.Group("/admin").Use(AuthMiddleware(s.User), AdminMiddleware(s.User))
+	admin := r.Group("/admin")
+	admin.Use(AuthMiddleware(s.User), AdminMiddleware(s.User))
 	{
 		AdminRoleRoutes(admin, s.Admin)
 		AdminRuleRoutes(admin, s.Admin)

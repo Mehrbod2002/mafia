@@ -43,7 +43,6 @@ func (s *userService) VerifyOTP(req domain.VerifyOTPRequest) (string, uint, erro
 	user.OTP = ""
 	s.userRepo.Update(user)
 
-	profile := domain.Profile{UserID: user.ID, Name: req.Name, Age: req.Age, Gender: req.Gender}
 	s.userRepo.Update(user)
 
 	wallet := domain.Wallet{UserID: user.ID, Coins: 100, Diamonds: 10}
