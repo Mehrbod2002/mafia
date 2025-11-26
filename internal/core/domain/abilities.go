@@ -55,3 +55,18 @@ func AbilityCatalog() []AbilityOption {
 		{Code: "clumsy_hand", Label: "Clumsy Hand", PersianLabel: "دست اشتباهی", Phase: "night", Side: "neutral", Icon: "✋", Description: "Disables a player's abilities for the remainder of the game.", PersianDescription: "توانایی‌های یک بازیکن را برای باقی‌مانده بازی غیرفعال می‌کند."},
 	}
 }
+
+// AbilityIndex maps ability codes to their full option definitions for quick lookup.
+func AbilityIndex() map[string]AbilityOption {
+	idx := make(map[string]AbilityOption)
+	for _, ability := range AbilityCatalog() {
+		idx[ability.Code] = ability
+	}
+	return idx
+}
+
+// FindAbility fetches the ability option for a code if it exists.
+func FindAbility(code string) (AbilityOption, bool) {
+	ability, ok := AbilityIndex()[code]
+	return ability, ok
+}
