@@ -1,9 +1,10 @@
 package postgres
 
 import (
+	"mafia/internal/core/domain"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"mafia/internal/core/domain"
 )
 
 var db *gorm.DB
