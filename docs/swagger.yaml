@@ -1,0 +1,1391 @@
+basePath: /
+definitions:
+  domain.AbilityRequest:
+    properties:
+      ability:
+        type: string
+      target_id:
+        type: integer
+    type: object
+  domain.CreateRoleRequest:
+    properties:
+      abilities:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      max_count:
+        type: integer
+      name:
+        type: string
+      team:
+        type: string
+    required:
+    - name
+    type: object
+  domain.CreateRoomRequest:
+    properties:
+      type:
+        type: string
+    type: object
+  domain.GameRoom:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      day_count:
+        type: integer
+      deleted_at:
+        type: string
+      host_id:
+        type: integer
+      id:
+        type: integer
+      phase:
+        type: string
+      players:
+        items:
+          $ref: '#/definitions/domain.User'
+        type: array
+      results:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      winner:
+        type: string
+    type: object
+  domain.GameRule:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      name:
+        type: string
+      phase:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.LoginRequest:
+    properties:
+      phone:
+        type: string
+    required:
+    - phone
+    type: object
+  domain.Profile:
+    properties:
+      age:
+        type: integer
+      avatar:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      friends:
+        type: integer
+      gender:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      losses:
+        type: integer
+      medals:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      play_time:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+      wins:
+        type: integer
+    type: object
+  domain.PurchaseItemRequest:
+    properties:
+      item_id:
+        type: integer
+    required:
+    - item_id
+    type: object
+  domain.PurchaseRequest:
+    properties:
+      plan_id:
+        type: string
+    type: object
+  domain.RegisterRequest:
+    properties:
+      phone:
+        type: string
+    required:
+    - phone
+    type: object
+  domain.Role:
+    properties:
+      abilities:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      max_count:
+        type: integer
+      name:
+        type: string
+      team:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.RuleRequest:
+    properties:
+      description:
+        type: string
+      enabled:
+        type: boolean
+      name:
+        type: string
+      phase:
+        type: string
+    required:
+    - name
+    type: object
+  domain.Scenario:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      rules:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+  domain.ScenarioRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      rules:
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    type: object
+  domain.ShopItem:
+    properties:
+      created_at:
+        type: string
+      currency:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      price:
+        type: integer
+      stock:
+        type: integer
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.UpdateProfileRequest:
+    properties:
+      avatar:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      otp:
+        type: string
+      otp_expires:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      profile:
+        $ref: '#/definitions/domain.Profile'
+      role:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+      wallet:
+        $ref: '#/definitions/domain.Wallet'
+    type: object
+  domain.VerifyOTPRequest:
+    properties:
+      age:
+        type: integer
+      gender:
+        type: string
+      name:
+        type: string
+      otp:
+        type: string
+      phone:
+        type: string
+    required:
+    - otp
+    - phone
+    type: object
+  domain.VoteRequest:
+    properties:
+      target_id:
+        type: integer
+    type: object
+  domain.Wallet:
+    properties:
+      coins:
+        type: integer
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      diamonds:
+        type: integer
+      id:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API documentation for the Mafia game.
+  title: Mafia API
+  version: "1.0"
+paths:
+  /admin/abilities:
+    get:
+      description: Returns all predefined abilities for roles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List available abilities
+      tags:
+      - Admin
+  /admin/roles:
+    get:
+      description: Lists all configured roles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Role'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List roles
+      tags:
+      - Admin
+    post:
+      consumes:
+      - application/json
+      description: Creates a new role definition.
+      parameters:
+      - description: Role payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Role'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a role
+      tags:
+      - Admin
+  /admin/roles/{id}:
+    delete:
+      description: Deletes a role by ID.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a role
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing role definition.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Role'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a role
+      tags:
+      - Admin
+  /admin/rules:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new game rule.
+      parameters:
+      - description: Rule payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.GameRule'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a rule
+      tags:
+      - Admin
+  /admin/rules/{id}:
+    delete:
+      description: Deletes a game rule by ID.
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a rule
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing game rule by ID.
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rule payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RuleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.GameRule'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a rule
+      tags:
+      - Admin
+  /admin/scenarios:
+    get:
+      description: Lists all configured scenarios.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Scenario'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List scenarios
+      tags:
+      - Admin
+    post:
+      consumes:
+      - application/json
+      description: Creates a new scenario with rules and roles.
+      parameters:
+      - description: Scenario payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ScenarioRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Scenario'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a scenario
+      tags:
+      - Admin
+  /admin/scenarios/{id}:
+    delete:
+      description: Deletes a scenario by ID.
+      parameters:
+      - description: Scenario ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a scenario
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing scenario by ID.
+      parameters:
+      - description: Scenario ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Scenario payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ScenarioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Scenario'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a scenario
+      tags:
+      - Admin
+  /admin/shop/items:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new item to the shop catalog.
+      parameters:
+      - description: Shop item payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ShopItem'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.ShopItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a shop item
+      tags:
+      - Admin
+  /admin/shop/items/{id}:
+    delete:
+      description: Deletes an existing shop item by ID.
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a shop item
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing shop item by ID.
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Shop item payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ShopItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ShopItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a shop item
+      tags:
+      - Admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Sends a one-time password to authenticate an existing user.
+      parameters:
+      - description: Login payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Request OTP for login
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Sends a one-time password to start a new account registration.
+      parameters:
+      - description: Registration payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Request OTP for registration
+      tags:
+      - Auth
+  /auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Confirms the OTP sent to the user and returns an access token.
+      parameters:
+      - description: OTP verification payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify an OTP code and issue a token
+      tags:
+      - Auth
+  /game/rooms:
+    get:
+      description: Lists available game rooms.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.GameRoom'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List game rooms
+      tags:
+      - Game
+    post:
+      consumes:
+      - application/json
+      description: Creates a new game room for the authenticated user.
+      parameters:
+      - description: Room payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.GameRoom'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a game room
+      tags:
+      - Game
+  /game/rooms/{id}/ability:
+    post:
+      consumes:
+      - application/json
+      description: Uses a role ability in an active game.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Ability payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.AbilityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Use an ability
+      tags:
+      - Game
+  /game/rooms/{id}/join:
+    post:
+      description: Adds the authenticated user to a room by ID.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Join a game room
+      tags:
+      - Game
+  /game/rooms/{id}/leave:
+    post:
+      description: Removes the authenticated user from a room by ID.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Leave a game room
+      tags:
+      - Game
+  /game/rooms/{id}/phase:
+    post:
+      description: Advances the game phase for a room.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.GameRoom'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Advance game phase
+      tags:
+      - Game
+  /game/rooms/{id}/start:
+    post:
+      description: Starts the game for a given room ID.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Start a game
+      tags:
+      - Game
+  /game/rooms/{id}/vote:
+    post:
+      consumes:
+      - application/json
+      description: Records a vote in an active game.
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Vote payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.VoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit a vote
+      tags:
+      - Game
+  /shop/items:
+    get:
+      description: Returns all shop items available for purchase.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ShopItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List shop items
+      tags:
+      - Shop
+  /shop/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Purchases an item from the shop for the authenticated user.
+      parameters:
+      - description: Purchase payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PurchaseItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ShopItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Purchase a shop item
+      tags:
+      - Shop
+  /user/dashboard:
+    get:
+      description: Retrieves aggregated dashboard information for the authenticated
+        user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user dashboard
+      tags:
+      - User
+  /user/profile:
+    get:
+      description: Retrieves the authenticated user's profile details.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Profile'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's profile information.
+      parameters:
+      - description: Profile update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Profile'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - User
+  /user/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Initiates a purchase flow for the authenticated user.
+      parameters:
+      - description: Purchase payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Initiate wallet purchase
+      tags:
+      - User
+  /user/wallet:
+    get:
+      description: Retrieves the authenticated user's wallet balances.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Wallet'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get wallet details
+      tags:
+      - User
+swagger: "2.0"

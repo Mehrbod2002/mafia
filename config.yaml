@@ -1,0 +1,17 @@
+server:
+  port: 8080
+  debug: false
+database:
+  url: postgres://mehrbod:mysecretpassword@localhost:5432/mydb?sslmode=disable
+redis:
+  addr: redis:6379
+rabbitmq:
+  url: amqp://guest:guest@rabbitmq:5672/
+payment:
+  zarinpal: https://api.zarinpal.com/pg/v4/payment
+webrtc:
+  ice_servers:
+    - urls: stun:stun.l.google.com:19302
+logging:
+  level: info
+  format: json
