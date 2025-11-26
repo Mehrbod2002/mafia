@@ -20,11 +20,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+
+	"mafia/docs"
 )
 
 func main() {
 	cfg := config.Load()
 	logger.Init(cfg.Logging.Level)
+
+	docs.SwaggerInfo.Host = "localhost:" + cfg.Server.Port
+	docs.SwaggerInfo.BasePath = "/"
 
 	db := postgres.New(cfg.Database.URL)
 	inMemoryCache := cachepkg.NewInMemoryCache()

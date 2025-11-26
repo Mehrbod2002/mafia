@@ -9,6 +9,17 @@ import (
 )
 
 func RegisterHandler(srv ports.UserService) gin.HandlerFunc {
+	// RegisterHandler godoc
+	// @Summary Request OTP for registration
+	// @Description Sends a one-time password to start a new account registration.
+	// @Tags Auth
+	// @Accept json
+	// @Produce json
+	// @Param request body domain.RegisterRequest true "Registration payload"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Failure 409 {object} map[string]string
+	// @Router /auth/register [post]
 	return func(c *gin.Context) {
 		var req domain.RegisterRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -25,6 +36,17 @@ func RegisterHandler(srv ports.UserService) gin.HandlerFunc {
 }
 
 func VerifyOTPHandler(srv ports.UserService) gin.HandlerFunc {
+	// VerifyOTPHandler godoc
+	// @Summary Verify an OTP code and issue a token
+	// @Description Confirms the OTP sent to the user and returns an access token.
+	// @Tags Auth
+	// @Accept json
+	// @Produce json
+	// @Param request body domain.VerifyOTPRequest true "OTP verification payload"
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /auth/verify [post]
 	return func(c *gin.Context) {
 		var req domain.VerifyOTPRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,6 +63,17 @@ func VerifyOTPHandler(srv ports.UserService) gin.HandlerFunc {
 }
 
 func LoginHandler(srv ports.UserService) gin.HandlerFunc {
+	// LoginHandler godoc
+	// @Summary Request OTP for login
+	// @Description Sends a one-time password to authenticate an existing user.
+	// @Tags Auth
+	// @Accept json
+	// @Produce json
+	// @Param request body domain.LoginRequest true "Login payload"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Failure 404 {object} map[string]string
+	// @Router /auth/login [post]
 	return func(c *gin.Context) {
 		var req domain.LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {

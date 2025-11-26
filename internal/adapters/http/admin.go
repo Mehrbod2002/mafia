@@ -10,18 +10,74 @@ import (
 )
 
 func AdminRoleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
-	r.GET("/abilities", func(c *gin.Context) {
+	r.GET("/abilities", ListAbilitiesHandler(srv))
+	r.GET("/roles", ListRolesHandler(srv))
+	r.POST("/roles", CreateRoleHandler(srv))
+	r.PUT("/roles/:id", UpdateRoleHandler(srv))
+	r.DELETE("/roles/:id", DeleteRoleHandler(srv))
+}
+
+func AdminRuleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
+	r.GET("/rules", ListRulesHandler(srv))
+	r.POST("/rules", CreateRuleHandler(srv))
+	r.PUT("/rules/:id", UpdateRuleHandler(srv))
+	r.DELETE("/rules/:id", DeleteRuleHandler(srv))
+}
+
+func AdminScenarioRoutes(r *gin.RouterGroup, srv ports.AdminService) {
+	r.GET("/scenarios", ListScenariosHandler(srv))
+	r.POST("/scenarios", CreateScenarioHandler(srv))
+	r.PUT("/scenarios/:id", UpdateScenarioHandler(srv))
+	r.DELETE("/scenarios/:id", DeleteScenarioHandler(srv))
+}
+
+func ListAbilitiesHandler(srv ports.AdminService) gin.HandlerFunc {
+	// ListAbilitiesHandler godoc
+	// @Summary List available abilities
+	// @Description Returns all predefined abilities for roles.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} string
+	// @Router /admin/abilities [get]
+	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, srv.ListAbilities())
-	})
-	r.GET("/roles", func(c *gin.Context) {
+	}
+}
+
+func ListRolesHandler(srv ports.AdminService) gin.HandlerFunc {
+	// ListRolesHandler godoc
+	// @Summary List roles
+	// @Description Lists all configured roles.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} domain.Role
+	// @Failure 500 {object} map[string]string
+	// @Router /admin/roles [get]
+	return func(c *gin.Context) {
 		roles, err := srv.ListRoles()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, roles)
-	})
-	r.POST("/roles", func(c *gin.Context) {
+	}
+}
+
+func CreateRoleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// CreateRoleHandler godoc
+	// @Summary Create a role
+	// @Description Creates a new role definition.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.CreateRoleRequest true "Role payload"
+	// @Success 201 {object} domain.Role
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/roles [post]
+	return func(c *gin.Context) {
 		var req domain.CreateRoleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -33,8 +89,23 @@ func AdminRoleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusCreated, role)
-	})
-	r.PUT("/roles/:id", func(c *gin.Context) {
+	}
+}
+
+func UpdateRoleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// UpdateRoleHandler godoc
+	// @Summary Update a role
+	// @Description Updates an existing role definition.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Role ID"
+	// @Param request body domain.CreateRoleRequest true "Role payload"
+	// @Success 200 {object} domain.Role
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/roles/{id} [put]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		var req domain.CreateRoleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,27 +118,63 @@ func AdminRoleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusOK, role)
-	})
-	r.DELETE("/roles/:id", func(c *gin.Context) {
+	}
+}
+
+func DeleteRoleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// DeleteRoleHandler godoc
+	// @Summary Delete a role
+	// @Description Deletes a role by ID.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Role ID"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/roles/{id} [delete]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		if err := srv.DeleteRole(uint(id)); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "deleted"})
-	})
+	}
 }
 
-func AdminRuleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
-	r.GET("/rules", func(c *gin.Context) {
+func ListRulesHandler(srv ports.AdminService) gin.HandlerFunc {
+	// ListRulesHandler godoc
+	// @Summary List rules
+	// @Description Lists all configured rules.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} domain.GameRule
+	// @Failure 500 {object} map[string]string
+	// @Router /admin/rules [get]
+	return func(c *gin.Context) {
 		rules, err := srv.ListRules()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, rules)
-	})
-	r.POST("/rules", func(c *gin.Context) {
+	}
+}
+
+func CreateRuleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// CreateRuleHandler godoc
+	// @Summary Create a rule
+	// @Description Creates a new game rule.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.RuleRequest true "Rule payload"
+	// @Success 201 {object} domain.GameRule
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/rules [post]
+	return func(c *gin.Context) {
 		var req domain.RuleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -79,8 +186,23 @@ func AdminRuleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusCreated, rule)
-	})
-	r.PUT("/rules/:id", func(c *gin.Context) {
+	}
+}
+
+func UpdateRuleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// UpdateRuleHandler godoc
+	// @Summary Update a rule
+	// @Description Updates an existing game rule by ID.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Rule ID"
+	// @Param request body domain.RuleRequest true "Rule payload"
+	// @Success 200 {object} domain.GameRule
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/rules/{id} [put]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		var req domain.RuleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -93,27 +215,63 @@ func AdminRuleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusOK, rule)
-	})
-	r.DELETE("/rules/:id", func(c *gin.Context) {
+	}
+}
+
+func DeleteRuleHandler(srv ports.AdminService) gin.HandlerFunc {
+	// DeleteRuleHandler godoc
+	// @Summary Delete a rule
+	// @Description Deletes a game rule by ID.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Rule ID"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/rules/{id} [delete]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		if err := srv.DeleteRule(uint(id)); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "deleted"})
-	})
+	}
 }
 
-func AdminScenarioRoutes(r *gin.RouterGroup, srv ports.AdminService) {
-	r.GET("/scenarios", func(c *gin.Context) {
+func ListScenariosHandler(srv ports.AdminService) gin.HandlerFunc {
+	// ListScenariosHandler godoc
+	// @Summary List scenarios
+	// @Description Lists all configured scenarios.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} domain.Scenario
+	// @Failure 500 {object} map[string]string
+	// @Router /admin/scenarios [get]
+	return func(c *gin.Context) {
 		scenarios, err := srv.ListScenarios()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, scenarios)
-	})
-	r.POST("/scenarios", func(c *gin.Context) {
+	}
+}
+
+func CreateScenarioHandler(srv ports.AdminService) gin.HandlerFunc {
+	// CreateScenarioHandler godoc
+	// @Summary Create a scenario
+	// @Description Creates a new scenario with rules and roles.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.ScenarioRequest true "Scenario payload"
+	// @Success 201 {object} domain.Scenario
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/scenarios [post]
+	return func(c *gin.Context) {
 		var req domain.ScenarioRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -125,8 +283,23 @@ func AdminScenarioRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusCreated, scenario)
-	})
-	r.PUT("/scenarios/:id", func(c *gin.Context) {
+	}
+}
+
+func UpdateScenarioHandler(srv ports.AdminService) gin.HandlerFunc {
+	// UpdateScenarioHandler godoc
+	// @Summary Update a scenario
+	// @Description Updates an existing scenario by ID.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Scenario ID"
+	// @Param request body domain.ScenarioRequest true "Scenario payload"
+	// @Success 200 {object} domain.Scenario
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/scenarios/{id} [put]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		var req domain.ScenarioRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -139,13 +312,26 @@ func AdminScenarioRoutes(r *gin.RouterGroup, srv ports.AdminService) {
 			return
 		}
 		c.JSON(http.StatusOK, scenario)
-	})
-	r.DELETE("/scenarios/:id", func(c *gin.Context) {
+	}
+}
+
+func DeleteScenarioHandler(srv ports.AdminService) gin.HandlerFunc {
+	// DeleteScenarioHandler godoc
+	// @Summary Delete a scenario
+	// @Description Deletes a scenario by ID.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Scenario ID"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Router /admin/scenarios/{id} [delete]
+	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		if err := srv.DeleteScenario(uint(id)); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "deleted"})
-	})
+	}
 }

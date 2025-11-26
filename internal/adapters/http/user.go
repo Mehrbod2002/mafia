@@ -10,6 +10,16 @@ import (
 )
 
 func GetProfileHandler(srv ports.UserService) gin.HandlerFunc {
+	// GetProfileHandler godoc
+	// @Summary Get user profile
+	// @Description Retrieves the authenticated user's profile details.
+	// @Tags User
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {object} domain.Profile
+	// @Failure 401 {object} map[string]string
+	// @Failure 404 {object} map[string]string
+	// @Router /user/profile [get]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		profile, err := srv.GetProfile(userID)
@@ -22,6 +32,18 @@ func GetProfileHandler(srv ports.UserService) gin.HandlerFunc {
 }
 
 func UpdateProfileHandler(srv ports.UserService) gin.HandlerFunc {
+	// UpdateProfileHandler godoc
+	// @Summary Update user profile
+	// @Description Updates the authenticated user's profile information.
+	// @Tags User
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.UpdateProfileRequest true "Profile update payload"
+	// @Success 200 {object} domain.Profile
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /user/profile [put]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		var req domain.UpdateProfileRequest
@@ -39,6 +61,16 @@ func UpdateProfileHandler(srv ports.UserService) gin.HandlerFunc {
 }
 
 func DashboardHandler(srv ports.UserService) gin.HandlerFunc {
+	// DashboardHandler godoc
+	// @Summary Get user dashboard
+	// @Description Retrieves aggregated dashboard information for the authenticated user.
+	// @Tags User
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {object} map[string]interface{}
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /user/dashboard [get]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		dashboard, err := srv.GetDashboard(userID)
@@ -51,6 +83,16 @@ func DashboardHandler(srv ports.UserService) gin.HandlerFunc {
 }
 
 func GetWalletHandler(srv ports.WalletService) gin.HandlerFunc {
+	// GetWalletHandler godoc
+	// @Summary Get wallet details
+	// @Description Retrieves the authenticated user's wallet balances.
+	// @Tags User
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {object} domain.Wallet
+	// @Failure 401 {object} map[string]string
+	// @Failure 404 {object} map[string]string
+	// @Router /user/wallet [get]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		wallet, err := srv.GetWallet(userID)
@@ -63,6 +105,18 @@ func GetWalletHandler(srv ports.WalletService) gin.HandlerFunc {
 }
 
 func PurchaseHandler(srv ports.WalletService) gin.HandlerFunc {
+	// PurchaseHandler godoc
+	// @Summary Initiate wallet purchase
+	// @Description Initiates a purchase flow for the authenticated user.
+	// @Tags User
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.PurchaseRequest true "Purchase payload"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /user/purchase [post]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		var req domain.PurchaseRequest

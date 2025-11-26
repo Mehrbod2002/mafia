@@ -10,6 +10,16 @@ import (
 )
 
 func ListShopItemsHandler(srv ports.ShopService) gin.HandlerFunc {
+	// ListShopItemsHandler godoc
+	// @Summary List shop items
+	// @Description Returns all shop items available for purchase.
+	// @Tags Shop
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} domain.ShopItem
+	// @Failure 401 {object} map[string]string
+	// @Failure 500 {object} map[string]string
+	// @Router /shop/items [get]
 	return func(c *gin.Context) {
 		items, err := srv.ListItems()
 		if err != nil {
@@ -21,6 +31,18 @@ func ListShopItemsHandler(srv ports.ShopService) gin.HandlerFunc {
 }
 
 func PurchaseItemHandler(srv ports.ShopService) gin.HandlerFunc {
+	// PurchaseItemHandler godoc
+	// @Summary Purchase a shop item
+	// @Description Purchases an item from the shop for the authenticated user.
+	// @Tags Shop
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.PurchaseItemRequest true "Purchase payload"
+	// @Success 200 {object} domain.ShopItem
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /shop/purchase [post]
 	return func(c *gin.Context) {
 		userID := c.GetUint("user_id")
 		var req domain.PurchaseItemRequest
@@ -38,6 +60,18 @@ func PurchaseItemHandler(srv ports.ShopService) gin.HandlerFunc {
 }
 
 func CreateShopItemHandler(srv ports.ShopService) gin.HandlerFunc {
+	// CreateShopItemHandler godoc
+	// @Summary Create a shop item
+	// @Description Adds a new item to the shop catalog.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param request body domain.ShopItem true "Shop item payload"
+	// @Success 201 {object} domain.ShopItem
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /admin/shop/items [post]
 	return func(c *gin.Context) {
 		var item domain.ShopItem
 		if err := c.ShouldBindJSON(&item); err != nil {
@@ -54,6 +88,19 @@ func CreateShopItemHandler(srv ports.ShopService) gin.HandlerFunc {
 }
 
 func UpdateShopItemHandler(srv ports.ShopService) gin.HandlerFunc {
+	// UpdateShopItemHandler godoc
+	// @Summary Update a shop item
+	// @Description Updates an existing shop item by ID.
+	// @Tags Admin
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Item ID"
+	// @Param request body domain.ShopItem true "Shop item payload"
+	// @Success 200 {object} domain.ShopItem
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /admin/shop/items/{id} [put]
 	return func(c *gin.Context) {
 		var item domain.ShopItem
 		id, _ := strconv.Atoi(c.Param("id"))
@@ -72,6 +119,17 @@ func UpdateShopItemHandler(srv ports.ShopService) gin.HandlerFunc {
 }
 
 func DeleteShopItemHandler(srv ports.ShopService) gin.HandlerFunc {
+	// DeleteShopItemHandler godoc
+	// @Summary Delete a shop item
+	// @Description Deletes an existing shop item by ID.
+	// @Tags Admin
+	// @Produce json
+	// @Security BearerAuth
+	// @Param id path int true "Item ID"
+	// @Success 200 {object} map[string]string
+	// @Failure 400 {object} map[string]string
+	// @Failure 401 {object} map[string]string
+	// @Router /admin/shop/items/{id} [delete]
 	return func(c *gin.Context) {
 		id, _ := strconv.Atoi(c.Param("id"))
 		if err := srv.DeleteItem(uint(id)); err != nil {
