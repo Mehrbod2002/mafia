@@ -16,6 +16,10 @@ func NewAdminService(roleRepo ports.RoleRepository, ruleRepo ports.RuleRepositor
 	return &adminService{roleRepo: roleRepo, ruleRepo: ruleRepo, scenarioRepo: scenarioRepo}
 }
 
+func (s *adminService) ListAbilities() []domain.AbilityOption {
+	return domain.AbilityCatalog()
+}
+
 func (s *adminService) CreateRole(req domain.CreateRoleRequest) (*domain.Role, error) {
 	role := domain.Role{Name: req.Name, Description: req.Description, Abilities: req.Abilities, Team: req.Team, MaxCount: req.MaxCount}
 	if err := s.roleRepo.Create(&role); err != nil {

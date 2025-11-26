@@ -845,6 +845,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Role'
+  /api/v1/admin/abilities:
+    get:
+      tags: [Admin]
+      summary: List available abilities for building characters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Ability catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ability'
   /api/v1/admin/roles/{id}:
     put:
       tags: [Admin]
@@ -1273,6 +1288,24 @@ components:
           type: string
         ability:
           type: string
+    Ability:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        phase:
+          type: string
+          description: Phase where the ability is active (day, night, both)
+        side:
+          type: string
+          description: Suggested alignment for the ability (town, mafia, neutral)
+        description:
+          type: string
+        icon:
+          type: string
+          description: Emoji or icon name to render in UI selectors
     Role:
       type: object
       properties:
@@ -1280,10 +1313,16 @@ components:
           type: string
         name:
           type: string
+        description:
+          type: string
         team:
           type: string
-        ability:
-          type: string
+          description: Team alignment for the character (town, mafia, neutral)
+        abilities:
+          type: array
+          description: List of ability codes selected from the admin ability catalog
+          items:
+            type: string
         maxCount:
           type: integer
     Character:

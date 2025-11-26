@@ -10,6 +10,9 @@ import (
 )
 
 func AdminRoleRoutes(r *gin.RouterGroup, srv ports.AdminService) {
+	r.GET("/abilities", func(c *gin.Context) {
+		c.JSON(http.StatusOK, srv.ListAbilities())
+	})
 	r.GET("/roles", func(c *gin.Context) {
 		roles, err := srv.ListRoles()
 		if err != nil {

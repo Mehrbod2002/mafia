@@ -167,15 +167,16 @@ type ShopService interface {
 }
 
 type AdminService interface {
-	CreateRole(req domain.CreateRoleRequest) (*domain.Role, error)
-	UpdateRole(id uint, req domain.CreateRoleRequest) (*domain.Role, error)
-	DeleteRole(id uint) error
-	ListRoles() ([]domain.Role, error)
-	CreateRule(req domain.RuleRequest) (*domain.GameRule, error)
-	UpdateRule(id uint, req domain.RuleRequest) (*domain.GameRule, error)
-	DeleteRule(id uint) error
-	ListRules() ([]domain.GameRule, error)
-	CreateScenario(req domain.ScenarioRequest) (*domain.Scenario, error)
+        CreateRole(req domain.CreateRoleRequest) (*domain.Role, error)
+        UpdateRole(id uint, req domain.CreateRoleRequest) (*domain.Role, error)
+        DeleteRole(id uint) error
+        ListRoles() ([]domain.Role, error)
+        ListAbilities() []domain.AbilityOption
+        CreateRule(req domain.RuleRequest) (*domain.GameRule, error)
+        UpdateRule(id uint, req domain.RuleRequest) (*domain.GameRule, error)
+        DeleteRule(id uint) error
+        ListRules() ([]domain.GameRule, error)
+        CreateScenario(req domain.ScenarioRequest) (*domain.Scenario, error)
 	UpdateScenario(id uint, req domain.ScenarioRequest) (*domain.Scenario, error)
 	DeleteScenario(id uint) error
 	ListScenarios() ([]domain.Scenario, error)
